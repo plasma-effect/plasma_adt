@@ -57,6 +57,10 @@ namespace plasma_adt
 			{
 				return boost::none;
 			}
+			template<class T>auto optional_cat(T const& v)
+			{
+				return v;
+			}
 			template<class T, class U>auto optional_cat(T const& x, U const& y)
 				->decltype(boost::make_optional(std::tuple_cat(*x, *y)))
 			{
@@ -324,7 +328,7 @@ namespace plasma_adt
 		{
 			typedef std::tuple<T> constructor_tuple;
 
-			T value;
+			std::tuple<T> value;
 			value_type(T const& v) :value(v) {}
 			value_type(const value_type&) = default;
 			value_type(value_type&&) = default;
