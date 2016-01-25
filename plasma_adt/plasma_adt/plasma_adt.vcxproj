@@ -152,6 +152,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\algebraic_data_type.hpp" />
+    <ClInclude Include="..\generic_data_type.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -106,7 +106,7 @@ namespace plasma_adt
 				boost::optional<Return> operator()(DataType const& v, Args const&... args)const
 				{
 					auto t = pat.variable_instance(v);
-					return t ? boost::make_optional(id_tuple_apply(*t, func, args...)) : boost::none;
+					return t ? boost::make_optional(id_tuple_apply(*t, func, args...)) : static_cast<boost::optional<Return>>(boost::none);
 				}
 			};
 			template<class Return,class Recur, class DataType, class Pattern, class Function, class... Args>
@@ -488,5 +488,4 @@ namespace plasma_adt
 			return instance_t<Id, typename param<Id>::constructor_tuple>{};
 		}
 	};
-
 }
