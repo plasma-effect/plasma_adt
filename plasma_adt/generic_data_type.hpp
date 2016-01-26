@@ -41,63 +41,118 @@ namespace generic_adt
 
 	}
 
-	namespace detail
+	template<class... Ts>struct tuple {};
+	template<std::size_t Id, class Tuple>struct tuple_element;
+	template<std::size_t Id, class... Ts>struct tuple_element<Id, tuple<Ts...>>
 	{
+	private:
+		template<std::size_t Id, class T, class... Ts>struct impl :impl<Id - 1, Ts...>
+		{
 
-		template<class T, class Tag>struct have_tag :std::false_type {};
-		template<template<class>class Temp, class Tag, class T0>struct have_tag<Temp<T0>, Tag> :
-			type_traits::disjunction<have_tag<T0, Tag>> {};
-		template<template<class, class>class Temp, class Tag, class T0, class T1>struct have_tag<Temp<T0, T1>, Tag> :
-			type_traits::disjunction<have_tag<T0, Tag>, have_tag<T1, Tag>> {};
-		template<template<class, class, class>class Temp, class Tag, class T0, class T1, class T2>struct have_tag<Temp<T0, T1, T2>, Tag> :
-			type_traits::disjunction<have_tag<T0, Tag>, have_tag<T1, Tag>, have_tag<T2, Tag>> {};
-		template<template<class, class, class, class>class Temp, class Tag, class T0, class T1, class T2, class T3>struct have_tag<Temp<T0, T1, T2, T3>, Tag> :
-			type_traits::disjunction<have_tag<T0, Tag>, have_tag<T1, Tag>, have_tag<T2, Tag>, have_tag<T3, Tag>> {};
-		template<template<class, class, class, class, class>class Temp, class Tag, class T0, class T1, class T2, class T3, class T4>struct have_tag<Temp<T0, T1, T2, T3, T4>, Tag> :
-			type_traits::disjunction<have_tag<T0, Tag>, have_tag<T1, Tag>, have_tag<T2, Tag>, have_tag<T3, Tag>, have_tag<T4, Tag>> {};
-		template<template<class, class, class, class, class, class>class Temp, class Tag, class T0, class T1, class T2, class T3, class T4, class T5>struct have_tag<Temp<T0, T1, T2, T3, T4, T5>, Tag> :
-			type_traits::disjunction<have_tag<T0, Tag>, have_tag<T1, Tag>, have_tag<T2, Tag>, have_tag<T3, Tag>, have_tag<T4, Tag>, have_tag<T5, Tag>> {};
-
-		template<template<class...>class Temp, class Tag, class... Ts>struct have_tag<Temp<Ts...>, Tag> :
-			type_traits::disjunction<have_tag<Ts, Tag>...> {};
-		template<class Tag>struct have_tag<Tag, Tag> :std::true_type {};
-
-		template<class T, class From, class To>struct trans_type
+		};
+		template<class T, class... Ts>struct impl<0, T, Ts...>
 		{
 			typedef T type;
 		};
-		template<template<class>class Temp, class From, class To, class T0>struct trans_type<Temp<T0>, From, To>
-		{
-			typedef Temp<typename trans_type<T0, From, To>::type> type;
-		};
-		template<template<class, class>class Temp, class From, class To, class T0, class T1>struct trans_type<Temp<T0, T1>, From, To>
-		{
-			typedef Temp<typename trans_type<T0, From, To>::type, typename trans_type<T1, From, To>::type> type;
-		};
-		template<template<class, class, class>class Temp, class From, class To, class T0, class T1, class T2>struct trans_type<Temp<T0, T1, T2>, From, To>
-		{
-			typedef Temp<typename trans_type<T0, From, To>::type, typename trans_type<T1, From, To>::type, typename trans_type<T2, From, To>::type> type;
-		};
-		template<template<class, class, class, class>class Temp, class From, class To, class T0, class T1, class T2, class T3>struct trans_type<Temp<T0, T1, T2, T3>, From, To>
-		{
-			typedef Temp<typename trans_type<T0, From, To>::type, typename trans_type<T1, From, To>::type, typename trans_type<T2, From, To>::type, typename trans_type<T3, From, To>::type> type;
-		};
-		template<template<class, class, class, class, class>class Temp, class From, class To, class T0, class T1, class T2, class T3, class T4>struct trans_type<Temp<T0, T1, T2, T3, T4>, From, To>
-		{
-			typedef Temp<typename trans_type<T0, From, To>::type, typename trans_type<T1, From, To>::type, typename trans_type<T2, From, To>::type, typename trans_type<T3, From, To>::type, typename trans_type<T4, From, To>::type> type;
-		};
-		template<template<class, class, class, class, class, class>class Temp, class From, class To, class T0, class T1, class T2, class T3, class T4, class T5>struct trans_type<Temp<T0, T1, T2, T3, T4, T5>, From, To>
-		{
-			typedef Temp<typename trans_type<T0, From, To>::type, typename trans_type<T1, From, To>::type, typename trans_type<T2, From, To>::type, typename trans_type<T3, From, To>::type, typename trans_type<T4, From, To>::type, typename trans_type<T5, From, To>::type> type;
-		};
+	public:
+		typedef typename impl<Id, Ts...>::type type;
+	};
+	struct generic_tag {};
 
-		template<template<class...>class Temp, class From, class To, class... Ts>struct trans_type<Temp<Ts...>, From, To>
+	namespace utility
+	{
+		namespace detail
 		{
-			typedef Temp<typename trans_type<Ts, From, To>::type...> type;
+
+			template<class T, class Tag>struct have_tag :std::false_type {};
+			template<template<class>class Temp, class Tag, class T0>struct have_tag<Temp<T0>, Tag> :
+				type_traits::disjunction<have_tag<T0, Tag>> {};
+			template<template<class, class>class Temp, class Tag, class T0, class T1>struct have_tag<Temp<T0, T1>, Tag> :
+				type_traits::disjunction<have_tag<T0, Tag>, have_tag<T1, Tag>> {};
+			template<template<class, class, class>class Temp, class Tag, class T0, class T1, class T2>struct have_tag<Temp<T0, T1, T2>, Tag> :
+				type_traits::disjunction<have_tag<T0, Tag>, have_tag<T1, Tag>, have_tag<T2, Tag>> {};
+			template<template<class, class, class, class>class Temp, class Tag, class T0, class T1, class T2, class T3>struct have_tag<Temp<T0, T1, T2, T3>, Tag> :
+				type_traits::disjunction<have_tag<T0, Tag>, have_tag<T1, Tag>, have_tag<T2, Tag>, have_tag<T3, Tag>> {};
+			template<template<class, class, class, class, class>class Temp, class Tag, class T0, class T1, class T2, class T3, class T4>struct have_tag<Temp<T0, T1, T2, T3, T4>, Tag> :
+				type_traits::disjunction<have_tag<T0, Tag>, have_tag<T1, Tag>, have_tag<T2, Tag>, have_tag<T3, Tag>, have_tag<T4, Tag>> {};
+			template<template<class, class, class, class, class, class>class Temp, class Tag, class T0, class T1, class T2, class T3, class T4, class T5>struct have_tag<Temp<T0, T1, T2, T3, T4, T5>, Tag> :
+				type_traits::disjunction<have_tag<T0, Tag>, have_tag<T1, Tag>, have_tag<T2, Tag>, have_tag<T3, Tag>, have_tag<T4, Tag>, have_tag<T5, Tag>> {};
+
+			template<template<class...>class Temp, class Tag, class... Ts>struct have_tag<Temp<Ts...>, Tag> :
+				type_traits::disjunction<have_tag<Ts, Tag>...> {};
+			template<class Tag>struct have_tag<Tag, Tag> :std::true_type {};
+
+			template<class T, class From, class To>struct trans_type
+			{
+				typedef T type;
+			};
+			template<template<class>class Temp, class From, class To, class T0>struct trans_type<Temp<T0>, From, To>
+			{
+				typedef Temp<typename trans_type<T0, From, To>::type> type;
+			};
+			template<template<class, class>class Temp, class From, class To, class T0, class T1>struct trans_type<Temp<T0, T1>, From, To>
+			{
+				typedef Temp<typename trans_type<T0, From, To>::type, typename trans_type<T1, From, To>::type> type;
+			};
+			template<template<class, class, class>class Temp, class From, class To, class T0, class T1, class T2>struct trans_type<Temp<T0, T1, T2>, From, To>
+			{
+				typedef Temp<typename trans_type<T0, From, To>::type, typename trans_type<T1, From, To>::type, typename trans_type<T2, From, To>::type> type;
+			};
+			template<template<class, class, class, class>class Temp, class From, class To, class T0, class T1, class T2, class T3>struct trans_type<Temp<T0, T1, T2, T3>, From, To>
+			{
+				typedef Temp<typename trans_type<T0, From, To>::type, typename trans_type<T1, From, To>::type, typename trans_type<T2, From, To>::type, typename trans_type<T3, From, To>::type> type;
+			};
+			template<template<class, class, class, class, class>class Temp, class From, class To, class T0, class T1, class T2, class T3, class T4>struct trans_type<Temp<T0, T1, T2, T3, T4>, From, To>
+			{
+				typedef Temp<typename trans_type<T0, From, To>::type, typename trans_type<T1, From, To>::type, typename trans_type<T2, From, To>::type, typename trans_type<T3, From, To>::type, typename trans_type<T4, From, To>::type> type;
+			};
+			template<template<class, class, class, class, class, class>class Temp, class From, class To, class T0, class T1, class T2, class T3, class T4, class T5>struct trans_type<Temp<T0, T1, T2, T3, T4, T5>, From, To>
+			{
+				typedef Temp<typename trans_type<T0, From, To>::type, typename trans_type<T1, From, To>::type, typename trans_type<T2, From, To>::type, typename trans_type<T3, From, To>::type, typename trans_type<T4, From, To>::type, typename trans_type<T5, From, To>::type> type;
+			};
+
+			template<template<class...>class Temp, class From, class To, class... Ts>struct trans_type<Temp<Ts...>, From, To>
+			{
+				typedef Temp<typename trans_type<Ts, From, To>::type...> type;
+			};
+			template<class From, class To>struct trans_type<From, From, To>
+			{
+				typedef To type;
+			};
+		}
+
+		template<class Target, class Base,class Pointer, class Generic>
+		struct trans_tuple
+		{
+			typedef std::tuple<
+				typename detail::trans_type<
+				typename detail::trans_type<
+				Target, generic_tag, Generic>::type,
+				Base, Pointer>::type> type;
 		};
-		template<class From, class To>struct trans_type<From, From, To>
+		template<class Base, class Pointer, class Generic, class... Ts>
+		struct trans_tuple<tuple<Ts...>, Base, Pointer, Generic>
 		{
-			typedef To type;
+			typedef std::tuple<
+				typename detail::trans_type<
+				typename detail::trans_type<
+				Ts, generic_tag, Generic>::type,
+				Base, Pointer>::type...> type;
+		};
+		template<class Base, class Pointer, class Generic>
+		struct trans_tuple<void, Base, Pointer, Generic>
+		{
+			typedef std::tuple<>;
+		};
+		template<class Target, class Base>
+		struct have_generic:type_traits::disjunction<
+			detail::have_tag<Target,Base>,
+			detail::have_tag<Target,generic_tag>>{};
+
+		template<class Return, class Base, class ValueType, class Generic>
+		struct trans_return_type
+		{
+			typedef typename detail::trans_type<typename detail::trans_type<Return, Base, ValueType>::type, generic_tag, Generic>::type type;
 		};
 
 		template<std::size_t Id, class T>struct id_type
@@ -124,12 +179,54 @@ namespace generic_adt
 		{
 			return std::move(v.value);
 		}
+
+	}
+
+	namespace place_holder
+	{
+		namespace detail
+		{
+			template<int V, int I, int... Is>struct value_t :value_t<10 * V + I, Is...> {};
+			template<int V, int I>struct value_t<V, I> :std::integral_constant<int, 10 * V + I> {};
+		}
+		template<int I>struct place_holder_t
+		{
+			struct place_holder
+			{
+				template<class T>boost::optional<std::tuple<pattern_match::detail::id_type<Id, T>>> operator()(const T& v)const
+				{
+					return boost::make_optional(pattern_match::detail::make_tuple<Id>(v));
+				}
+			};
+			place_holder operator()(...)const
+			{
+				return place_holder{};
+			}
+		};
+		template<char... Cs>constexpr auto operator"" _()
+		{
+			return place_holder_t<detail::value_t<0, static_cast<int>(Cs - '0')...>::value>{};
+		}
+		struct ignore_place_t
+		{
+			struct place_holder
+			{
+				boost::optional<std::tuple<>> operator()(...)const
+				{
+					return boost::make_optional(std::tuple<>{});
+				}
+			};
+			place_holder operator()(...)const
+			{
+				return place_holder{};
+			}
+		};
 	}
 
 	namespace pattern_match
 	{
 		struct pattern_match_tag {};
-		namespace detail 
+		namespace detail
 		{
 			template<std::size_t Id, class T>struct id_type
 			{
@@ -210,99 +307,114 @@ namespace generic_adt
 			{
 				return lambda_t<Func, std::tuple<Args...>, std::make_index_sequence<sizeof...(Args)>>{func, std::make_tuple(args...)};
 			}
-		}
-	}
 
-	namespace place_holder
-	{
-		namespace detail
-		{
-			template<int V, int I, int... Is>struct value_t :value_t<10 * V + I, Is...> {};
-			template<int V, int I>struct value_t<V, I> :std::integral_constant<int, 10 * V + I> {};
-		}
-		template<std::size_t I>struct argument_place_t :pattern_match::pattern_match_tag
-		{
-			struct place_holder_t
+			template<class T>struct forward_t
 			{
-				template<class T>auto operator()(T const& v)const
+				typedef T const& type;
+			};
+			template<class T>struct forward_t<T&>
+			{
+				typedef T& type;
+			};
+		}
+	
+		template<class Return, class DataType, class... Ts>struct generic_match_t
+		{
+			template<class Generic>using value_type =
+				typename DataType::template value_type<Generic>;
+			template<class Generic>using return_type =
+				utility::trans_return_type<Return, DataType, value_type<Generic>, Generic>;
+			
+			template<class Next, class Pattern, class Func>struct match_t
+			{
+				Next next;
+				Pattern pattern;
+				Func func;
+
+				template<class Generic>boost::optional<return_type<Generic>> operator()
+					(value_type<Generic>const& value, typename detail::forward_t<Ts>::type... arg)const
 				{
-					return boost::make_optional(pattern_match::detail::make_tuple<I>(v));
+					if (auto ret = next(value, args...))
+						return ret;
+					if (auto pat = pattern(type_tag<Generic>{})(value))
+						return boost::make_optional(
+							detail::id_tuple_apply(*pat, detail::make_lambda(func, type_tag<Generic>{}), arg...));
+					return boost::none;
+				}
+				
+				template<class BeforePattern, class BeforeFunc>match_t<match_t<Next, Pattern, Func>, BeforePattern, BeforeFunc>
+					operator|(std::pair<BeforePattern, BeforeFunc> p)const
+				{
+					return match_t<match_t<Next, Pattern, Func>, BeforePattern, BeforeFunc>{*this, p.first, p.second};
 				}
 			};
-			place_holder_t operator()(...)const
-			{
-				return place_holder_t{};
-			}
 
-			template<class Func>auto operator<=(Func&& func)
+			struct first_match_t
 			{
-				return std::make_pair(*this, std::forward<Func>(func));
-			}
-		};
-		template<char... Cs>auto operator"" _()
-		{
-			return argument_place_t<detail::value_t<0, (Cs - '0')...>::value>{};
-		}
-
-		struct ignore_place_t :pattern_match::pattern_match_tag
-		{
-			struct place_holder_t
-			{
-				auto operator()(...)const
+				template<class Generic>boost::optional<return_type<Generic>> operator()
+					(value_type<Generic>const& value, typename detail::forward_t<Ts>::type... arg)const
 				{
-					return boost::make_optional(std::tuple<>{});
+					return boost::none;
 				}
 			};
-			auto operator()(...)const
+			template<class BeforePattern, class BeforeFunc>match_t<first_match_t, BeforePattern, BeforeFunc>
+				operator|(std::pair<BeforePattern, BeforeFunc> p)const
 			{
-				return place_holder_t{};
+				return match_t<first_match_t, BeforePattern, BeforeFunc>{first_match_t{}, p.first, p.second};
 			}
 		};
-		constexpr ignore_place_t i_{};
-	}
+		template<class Return, class DataType, class... Ts>struct generic_recursion_t
+		{
+			template<class Generic>using value_type =
+				typename DataType::template value_type<Generic>;
+			template<class Generic>using return_type =
+				utility::trans_return_type<Return, DataType, value_type<Generic>, Generic>;
 
-	template<class... Ts>struct tuple {};
-	template<std::size_t Id, class Tuple>struct tuple_element;
-	template<std::size_t Id, class... Ts>struct tuple_element<Id, tuple<Ts...>>
-	{
-	private:
-		template<std::size_t Id, class T, class... Ts>struct impl :impl<Id - 1, Ts...>
-		{
+			template<class Next, class Pattern, class Func>struct match_t
+			{
+				Next next;
+				Pattern pattern;
+				Func func;
 
-		};
-		template<class T, class... Ts>struct impl<0, T, Ts...>
-		{
-			typedef T type;
-		};
-	public:
-		typedef typename impl<Id, Ts...>::type type;
-	};
-	struct generic_tag {};
+				template<class Recur,class Generic>boost::optional<return_type<Generic>> run
+					(Recur recur, value_type<Generic>const& value, typename detail::forward_t<Ts>::type... arg)const
+				{
+					if (auto ret = next.run(value, args...))
+						return ret;
+					if (auto pat = pattern(type_tag<Generic>{})(value))
+						return boost::make_optional(
+							detail::id_tuple_apply(*pat, detail::make_lambda(func, recur, type_tag<Generic>{}), arg...));
+					return boost::none;
+				}
 
-	namespace detail
-	{
-		template<class Target, class Base,class Pointer, class Generic>
-		struct trans_tuple
-		{
-			typedef std::tuple<
-				typename detail::trans_type<
-				typename detail::trans_type<
-				Target, generic_tag, Generic>::type,
-				Base, Pointer>::type> type;
+				template<class Generic>return_type operator()
+					(value_type<Generic>const& value, typename detail::forward_t<Ts>::type... arg)const
+				{
+					if (auto ret = run(std::cref(*this), value, arg...))return *ret;
+					throw std::invalid_argument(R"(pattern match error: not found this pattern)");
+				}
+
+				template<class BeforePattern, class BeforeFunc>match_t<match_t<Next, Pattern, Func>, BeforePattern, BeforeFunc>
+					operator|(std::pair<BeforePattern, BeforeFunc> p)const
+				{
+					return match_t<match_t<Next, Pattern, Func>, BeforePattern, BeforeFunc>{*this, p.first, p.second};
+				}
+			};
+
+			struct first_match_t
+			{
+				template<class Recur,class Generic>boost::optional<return_type<Generic>> operator()
+					(Recur, value_type<Generic>const&, typename detail::forward_t<Ts>::type...)const
+				{
+					return boost::none;
+				}
+			};
+			template<class BeforePattern, class BeforeFunc>match_t<first_match_t, BeforePattern, BeforeFunc>
+				operator|(std::pair<BeforePattern, BeforeFunc> p)const
+			{
+				return match_t<first_match_t, BeforePattern, BeforeFunc>{first_match_t{}, p.first, p.second};
+			}
 		};
-		template<class Base, class Pointer, class Generic, class... Ts>
-		struct trans_tuple<tuple<Ts...>, Base, Pointer, Generic>
-		{
-			typedef std::tuple<
-				typename detail::trans_type<
-				typename detail::trans_type<
-				Ts, generic_tag, Generic>::type,
-				Base, Pointer>::type...> type;
-		};
-		template<class Base, class Pointer, class Generic>
-		struct trans_tuple<void, Base, Pointer, Generic>
-		{
-			typedef std::tuple<>;
-		};
+
 	}
 }
