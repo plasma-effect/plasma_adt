@@ -410,15 +410,14 @@ namespace generic_adt
 					return boost::make_optional(pattern_match::detail::make_tuple<I>(v));
 				}
 			};
-			template<class Generic>place_holder operator()(type_tag<Generic>)const
+			place_holder operator()(...)const
 			{
 				return place_holder{};
 			}
 		};
-		template<char... Cs>constexpr auto operator"" _()
-			->place_holder_t<detail::value_t<0, static_cast<int>(Cs - '0')...>::value>
+		template<char... Cs>constexpr place_holder_t<detail::value_t<0, (Cs - '0')...>::value> operator"" _()
 		{
-			return place_holder_t<detail::value_t<0, static_cast<int>(Cs - '0')...>::value>{};
+			return place_holder_t<detail::value_t<0, (Cs - '0')...>::value>{};
 		}
 		struct ignore_place_t
 		{
@@ -442,7 +441,7 @@ namespace generic_adt
 		template<class Tuple, class IndexSequence>struct make_t;
 		template<class... Ts, std::size_t... Is>struct make_t<tuple<Ts...>, std::index_sequence<Is...>>
 		{
-			template<class Generic>using tuple = tuple<
+			template<class Generic>using tuple = std::tuple<
 				utility::id_type<Is,
 				typename utility::trans_tuple<Ts, Derived, std::shared_ptr<value_type<Generic>>, Generic>::type>...>;
 			template<class Generic>using variant = boost::variant<
@@ -510,12 +509,12 @@ namespace generic_adt
 			std::tuple<Patterns...> patterns;
 
 			template<class Generic>pattern_t<
-				typename tuple_element<Id, value_tuple<Generic>>::type,
+				typename std::tuple_element<Id, value_tuple<Generic>>::type,
 				std::tuple<Patterns...>,
 				std::make_index_sequence<sizeof...(Patterns) >>
 				operator()(type_tag<Generic>)const
 			{
-				return pattern_t<typename tuple_element<Id, value_tuple<Generic>>::type, std::tuple<Patterns...>, std::make_index_sequence<sizeof...(Patterns)>>{patterns};
+				return pattern_t<typename std::tuple_element<Id, value_tuple<Generic>>::type, std::tuple<Patterns...>, std::make_index_sequence<sizeof...(Patterns)>>{patterns};
 			}
 
 			template<class Func>auto operator<=(Func func)const->decltype(std::make_pair(*this, func))
@@ -525,9 +524,9 @@ namespace generic_adt
 		};
 		template<std::size_t Id>struct instance_pattern_t
 		{
-			template<class Generic>instance_t<Generic, typename tuple_element<Id, value_tuple<Generic>>::type> operator()(type_tag<Generic>const&)const
+			template<class Generic>instance_t<Generic, typename std::tuple_element<Id, value_tuple<Generic>>::type> operator()(type_tag<Generic>const&)const
 			{
-				return instance_t<Generic, typename tuple_element<Id, value_tuple<Generic>>::type>{};
+				return instance_t<Generic, typename std::tuple_element<Id, value_tuple<Generic>>::type>{};
 			}
 
 			template<class Pattern, class... Patterns>
