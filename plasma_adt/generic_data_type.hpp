@@ -45,16 +45,14 @@ namespace generic_adt
 	template<std::size_t Id, class Tuple>struct tuple_element;
 	template<std::size_t Id, class... Ts>struct tuple_element<Id, tuple<Ts...>>
 	{
-	private:
-		template<std::size_t Id, class T, class... Ts>struct impl :impl<Id - 1, Ts...>
+		template<std::size_t I, class T, class... Types>struct impl :impl<I - 1, Types...>
 		{
 
 		};
-		template<class T, class... Ts>struct impl<0, T, Ts...>
+		template<class T, class... Types>struct impl<0, T, Types...>
 		{
 			typedef T type;
 		};
-	public:
 		typedef typename impl<Id, Ts...>::type type;
 	};
 	struct generic_tag {};
@@ -121,7 +119,7 @@ namespace generic_adt
 			};
 		}
 
-		template<class Target, class Base,class Pointer, class Generic>
+		template<class Target, class Base, class Pointer, class Generic>
 		struct trans_tuple
 		{
 			typedef std::tuple<
@@ -142,12 +140,12 @@ namespace generic_adt
 		template<class Base, class Pointer, class Generic>
 		struct trans_tuple<void, Base, Pointer, Generic>
 		{
-			typedef std::tuple<>;
+			typedef std::tuple<> type;
 		};
 		template<class Target, class Base>
-		struct have_generic:type_traits::disjunction<
-			detail::have_tag<Target,Base>,
-			detail::have_tag<Target,generic_tag>>{};
+		struct have_generic :type_traits::disjunction<
+			detail::have_tag<Target, Base>,
+			detail::have_tag<Target, generic_tag >> {};
 
 		template<class Return, class Base, class ValueType, class Generic>
 		struct trans_return_type
@@ -179,49 +177,11 @@ namespace generic_adt
 		{
 			return std::move(v.value);
 		}
+		template<class>struct is_type_tag :std::false_type {};
+		template<class T>struct is_type_tag<type_tag<T>> :std::true_type {};
 
 	}
 
-	namespace place_holder
-	{
-		namespace detail
-		{
-			template<int V, int I, int... Is>struct value_t :value_t<10 * V + I, Is...> {};
-			template<int V, int I>struct value_t<V, I> :std::integral_constant<int, 10 * V + I> {};
-		}
-		template<int I>struct place_holder_t
-		{
-			struct place_holder
-			{
-				template<class T>boost::optional<std::tuple<pattern_match::detail::id_type<Id, T>>> operator()(const T& v)const
-				{
-					return boost::make_optional(pattern_match::detail::make_tuple<Id>(v));
-				}
-			};
-			place_holder operator()(...)const
-			{
-				return place_holder{};
-			}
-		};
-		template<char... Cs>constexpr auto operator"" _()
-		{
-			return place_holder_t<detail::value_t<0, static_cast<int>(Cs - '0')...>::value>{};
-		}
-		struct ignore_place_t
-		{
-			struct place_holder
-			{
-				boost::optional<std::tuple<>> operator()(...)const
-				{
-					return boost::make_optional(std::tuple<>{});
-				}
-			};
-			place_holder operator()(...)const
-			{
-				return place_holder{};
-			}
-		};
-	}
 
 	namespace pattern_match
 	{
@@ -317,14 +277,14 @@ namespace generic_adt
 				typedef T& type;
 			};
 		}
-	
+
 		template<class Return, class DataType, class... Ts>struct generic_match_t
 		{
 			template<class Generic>using value_type =
-				typename DataType::template value_type<Generic>;
+				std::shared_ptr<typename DataType::template value_type<Generic>>;
 			template<class Generic>using return_type =
-				utility::trans_return_type<Return, DataType, value_type<Generic>, Generic>;
-			
+				typename utility::trans_return_type<Return, DataType, value_type<Generic>, Generic>::type;
+
 			template<class Next, class Pattern, class Func>struct match_t
 			{
 				Next next;
@@ -334,41 +294,41 @@ namespace generic_adt
 				template<class Generic>boost::optional<return_type<Generic>> operator()
 					(value_type<Generic>const& value, typename detail::forward_t<Ts>::type... arg)const
 				{
-					if (auto ret = next(value, args...))
+					if (auto ret = next(value, arg...))
 						return ret;
 					if (auto pat = pattern(type_tag<Generic>{})(value))
 						return boost::make_optional(
 							detail::id_tuple_apply(*pat, detail::make_lambda(func, type_tag<Generic>{}), arg...));
 					return boost::none;
 				}
-				
+
 				template<class BeforePattern, class BeforeFunc>match_t<match_t<Next, Pattern, Func>, BeforePattern, BeforeFunc>
 					operator|(std::pair<BeforePattern, BeforeFunc> p)const
-				{
-					return match_t<match_t<Next, Pattern, Func>, BeforePattern, BeforeFunc>{*this, p.first, p.second};
-				}
+					{
+						return match_t<match_t<Next, Pattern, Func>, BeforePattern, BeforeFunc>{*this, p.first, p.second};
+					}
 			};
 
 			struct first_match_t
 			{
 				template<class Generic>boost::optional<return_type<Generic>> operator()
-					(value_type<Generic>const& value, typename detail::forward_t<Ts>::type... arg)const
+					(value_type<Generic>const&, typename detail::forward_t<Ts>::type...)const
 				{
 					return boost::none;
 				}
 			};
 			template<class BeforePattern, class BeforeFunc>match_t<first_match_t, BeforePattern, BeforeFunc>
 				operator|(std::pair<BeforePattern, BeforeFunc> p)const
-			{
-				return match_t<first_match_t, BeforePattern, BeforeFunc>{first_match_t{}, p.first, p.second};
-			}
+				{
+					return match_t<first_match_t, BeforePattern, BeforeFunc>{first_match_t{}, p.first, p.second};
+				}
 		};
 		template<class Return, class DataType, class... Ts>struct generic_recursion_t
 		{
 			template<class Generic>using value_type =
-				typename DataType::template value_type<Generic>;
+				std::shared_ptr<typename DataType::template value_type<Generic>>;
 			template<class Generic>using return_type =
-				utility::trans_return_type<Return, DataType, value_type<Generic>, Generic>;
+				typename utility::trans_return_type<Return, DataType, value_type<Generic>, Generic>::type;
 
 			template<class Next, class Pattern, class Func>struct match_t
 			{
@@ -376,10 +336,10 @@ namespace generic_adt
 				Pattern pattern;
 				Func func;
 
-				template<class Recur,class Generic>boost::optional<return_type<Generic>> run
+				template<class Recur, class Generic>boost::optional<return_type<Generic>> run
 					(Recur recur, value_type<Generic>const& value, typename detail::forward_t<Ts>::type... arg)const
 				{
-					if (auto ret = next.run(value, args...))
+					if (auto ret = next.run(recur, value, arg...))
 						return ret;
 					if (auto pat = pattern(type_tag<Generic>{})(value))
 						return boost::make_optional(
@@ -387,7 +347,7 @@ namespace generic_adt
 					return boost::none;
 				}
 
-				template<class Generic>return_type operator()
+				template<class Generic>return_type<Generic> operator()
 					(value_type<Generic>const& value, typename detail::forward_t<Ts>::type... arg)const
 				{
 					if (auto ret = run(std::cref(*this), value, arg...))return *ret;
@@ -396,25 +356,196 @@ namespace generic_adt
 
 				template<class BeforePattern, class BeforeFunc>match_t<match_t<Next, Pattern, Func>, BeforePattern, BeforeFunc>
 					operator|(std::pair<BeforePattern, BeforeFunc> p)const
-				{
-					return match_t<match_t<Next, Pattern, Func>, BeforePattern, BeforeFunc>{*this, p.first, p.second};
-				}
+					{
+						return match_t<match_t<Next, Pattern, Func>, BeforePattern, BeforeFunc>{*this, p.first, p.second};
+					}
 			};
 
 			struct first_match_t
 			{
-				template<class Recur,class Generic>boost::optional<return_type<Generic>> operator()
+				template<class Recur, class Generic>boost::optional<return_type<Generic>> run
 					(Recur, value_type<Generic>const&, typename detail::forward_t<Ts>::type...)const
 				{
 					return boost::none;
 				}
+
+				template<class Recur, class Generic>boost::optional<return_type<Generic>> operator()
+					(Recur, value_type<Generic>const&, typename detail::forward_t<Ts>::type...)const
+				{
+					return boost::none;
+				}
+
 			};
 			template<class BeforePattern, class BeforeFunc>match_t<first_match_t, BeforePattern, BeforeFunc>
 				operator|(std::pair<BeforePattern, BeforeFunc> p)const
+				{
+					return match_t<first_match_t, BeforePattern, BeforeFunc>{first_match_t{}, p.first, p.second};
+				}
+		};
+
+		template<class Return, class DataType, class... Ts>generic_match_t<Return, DataType, Ts...> generic_match()
+		{
+			return generic_match_t<Return, DataType, Ts...>{};
+		}
+		template<class Return, class DataType, class... Ts>generic_recursion_t<Return, DataType, Ts...> generic_recursion()
+		{
+			return generic_recursion_t<Return, DataType, Ts...>{};
+		}
+	}
+
+	namespace place_holder
+	{
+		namespace detail
+		{
+			template<int V, int I, int... Is>struct value_t :value_t<10 * V + I, Is...> {};
+			template<int V, int I>struct value_t<V, I> :std::integral_constant<int, 10 * V + I> {};
+		}
+		template<int I>struct place_holder_t
+		{
+			struct place_holder
 			{
-				return match_t<first_match_t, BeforePattern, BeforeFunc>{first_match_t{}, p.first, p.second};
+				template<class T>auto operator()(const T& v)const
+					->decltype(boost::make_optional(pattern_match::detail::make_tuple<I>(v)))
+				{
+					return boost::make_optional(pattern_match::detail::make_tuple<I>(v));
+				}
+			};
+			template<class Generic>place_holder operator()(type_tag<Generic>)const
+			{
+				return place_holder{};
+			}
+		};
+		template<char... Cs>constexpr auto operator"" _()
+			->place_holder_t<detail::value_t<0, static_cast<int>(Cs - '0')...>::value>
+		{
+			return place_holder_t<detail::value_t<0, static_cast<int>(Cs - '0')...>::value>{};
+		}
+		struct ignore_place_t
+		{
+			struct place_holder
+			{
+				boost::optional<std::tuple<>> operator()(...)const
+				{
+					return boost::make_optional(std::tuple<>{});
+				}
+			};
+			place_holder operator()(...)const
+			{
+				return place_holder{};
+			}
+		};
+	}
+
+	template<class Derived, class... Variants>struct generic_data_type
+	{
+		template<class Generic>struct value_type;
+		template<class Tuple, class IndexSequence>struct make_t;
+		template<class... Ts, std::size_t... Is>struct make_t<tuple<Ts...>, std::index_sequence<Is...>>
+		{
+			template<class Generic>using tuple = tuple<
+				utility::id_type<Is,
+				typename utility::trans_tuple<Ts, Derived, std::shared_ptr<value_type<Generic>>, Generic>::type>...>;
+			template<class Generic>using variant = boost::variant<
+				utility::id_type<Is,
+				typename utility::trans_tuple<Ts, Derived, std::shared_ptr<value_type<Generic>>, Generic>::type>...>;
+		};
+		template<class Generic>using value_tuple = typename make_t<tuple<Variants...>, std::make_index_sequence<sizeof...(Variants)>>::template tuple<Generic>;
+		template<class Generic>using value_variants = typename make_t<tuple<Variants...>, std::make_index_sequence<sizeof...(Variants)>>::template variant<Generic>;
+
+
+		template<class Generic>struct value_type
+		{
+			value_variants<Generic> value;
+
+		};
+
+		template<class Generic, class Type>struct instance_t;
+		template<class Generic, std::size_t Id, class... Ts>struct instance_t<Generic, utility::id_type<Id, std::tuple<Ts...>>>
+		{
+			std::shared_ptr<value_type<Generic>> operator()(Ts const&... args)const
+			{
+				return std::make_shared<value_type<Generic>>(value_type<Generic>{utility::make_id_type<Id>(std::make_tuple(args...))});
+			}
+		};
+		template<class Type, class PatternTuple, class IndexTuple> struct pattern_t;
+		template<std::size_t Id, class... Ts, class... Patterns, std::size_t... Is>struct pattern_t
+			<utility::id_type<Id, std::tuple<Ts...>>, std::tuple<Patterns...>, std::index_sequence<Is...>>
+		{
+			std::tuple<Patterns...> patterns;
+
+			template<class Generic>auto operator()(std::shared_ptr<value_type<Generic>> value)const
+				->decltype(pattern_match::detail::optional_cat(
+					std::declval<Patterns>()(type_tag<Generic>{})(std::declval<Ts>())...))
+			{
+				if (value->value.which() != Id)
+					return boost::none;
+				const utility::id_type<Id, std::tuple<Ts...>>& v = boost::get<utility::id_type<Id, std::tuple<Ts...>>>(value->value);
+				return pattern_match::detail::optional_cat(
+					std::get<Is>(patterns)(type_tag<Generic>{})(std::get<Is>(utility::get_id_value(v)))...);
+			}
+
+			boost::optional<std::tuple<>> operator()(...)const
+			{
+				return boost::none;
+			}
+		};
+		template<std::size_t Id, class... Ts>struct pattern_t
+			<utility::id_type<Id, std::tuple<Ts...>>, std::tuple<>, std::index_sequence<>>
+		{
+			std::tuple<> patterns;
+
+			template<class Generic>boost::optional<std::tuple<>>
+				operator()(std::shared_ptr<value_type<Generic>> value)const
+				{
+					return value->value.which() == Id ? boost::make_optional(std::tuple<>{}) : static_cast<boost::optional<std::tuple<>>>(boost::none);
+				}
+
+				boost::optional<std::tuple<>> operator()(...)const
+				{
+					return boost::none;
+				}
+		};
+		template<std::size_t Id, class... Patterns>struct pattern_match_t
+		{
+			std::tuple<Patterns...> patterns;
+
+			template<class Generic>pattern_t<
+				typename tuple_element<Id, value_tuple<Generic>>::type,
+				std::tuple<Patterns...>,
+				std::make_index_sequence<sizeof...(Patterns) >>
+				operator()(type_tag<Generic>)const
+			{
+				return pattern_t<typename tuple_element<Id, value_tuple<Generic>>::type, std::tuple<Patterns...>, std::make_index_sequence<sizeof...(Patterns)>>{patterns};
+			}
+
+			template<class Func>auto operator<=(Func func)const->decltype(std::make_pair(*this, func))
+			{
+				return std::make_pair(*this, func);
+			}
+		};
+		template<std::size_t Id>struct instance_pattern_t
+		{
+			template<class Generic>instance_t<Generic, typename tuple_element<Id, value_tuple<Generic>>::type> operator()(type_tag<Generic>const&)const
+			{
+				return instance_t<Generic, typename tuple_element<Id, value_tuple<Generic>>::type>{};
+			}
+
+			template<class Pattern, class... Patterns>
+			typename std::enable_if<!utility::is_type_tag<Pattern>::value, pattern_match_t<Id, Pattern, Patterns...>>::type
+				operator()(Pattern pattern, Patterns... patterns)const
+			{
+				return pattern_match_t<Id, Pattern, Patterns...>{std::make_tuple(pattern, patterns...)};
+			}
+
+			template<class Func>auto operator<=(Func func)const
+			{
+				return std::make_pair(pattern_match_t<Id>{std::tuple<>{}}, func);
 			}
 		};
 
-	}
+		template<std::size_t Id>static instance_pattern_t<Id>instance_function()
+		{
+			return instance_pattern_t<Id>{};
+		}
+	};
 }
