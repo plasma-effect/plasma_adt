@@ -22,7 +22,7 @@ int main()
 	const auto IntTree = Tree(type_tag<int>{});
 	const auto IntNil = Nil(type_tag<int>{});
 
-	auto v = IntTree(1, IntTree(2, IntNil()));
+	auto v = IntTree(1, IntTree(2, IntTree(3, IntNil())));
 	
 	auto x = StdList(v);
 	
