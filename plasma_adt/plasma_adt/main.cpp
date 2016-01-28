@@ -1,33 +1,29 @@
 #include<iostream>
 #include<string>
-#include<list>
-
 #include<plasma_adt/generic_data_type.hpp>
 
 using namespace generic_adt;
 using namespace place_holder;
 
-struct list : generic_data_type<list, void, tuple<generic_tag, list>>{};
+struct list :generic_data_type<list, void, tuple<generic_tag, list>>{};
 
 const auto Nil = list::instance_function<0>();
 const auto Tree = list::instance_function<1>();
 
-const auto StdList = pattern_match::generic_recursion<std::list<generic_tag>,list>()
-| Nil <= [](auto, auto t) {return std::list<typename decltype(t)::type>{};}
-| Tree(0_, 1_) <= [](auto recur, auto, auto v, auto next) {auto lis = recur(next);lis.push_front(v);return lis;};
+const auto Sum = pattern_match::generic_recursion<generic_tag, list>()
+| Nil <= [](auto, auto t) {return t.make_value();}
+| Tree(0_, 1_) <= [](auto recur, auto, auto v, auto next) {return v + recur(next);};
+
+const auto nil = Nil(type_tag<void>{})();
 
 int main()
 {
+	const auto int_tree = Tree(type_tag<int>{});
+	const auto string_tree = Tree(type_tag<std::string>{});
 
-	const auto IntTree = Tree(type_tag<int>{});
-	const auto IntNil = Nil(type_tag<int>{});
+	auto v = int_tree(1, int_tree(2, int_tree(3, nil)));
+	auto u = string_tree("this ", string_tree("is ", string_tree("test", nil)));
 
-	auto v = IntTree(1, IntTree(2, IntTree(3, IntNil())));
-	
-	auto x = StdList(v);
-	
-	for (auto i : x)
-	{
-		std::cout << i << std::endl;
-	}
+	std::cout << Sum(v) << std::endl;
+	std::cout << Sum(u) << std::endl;
 }

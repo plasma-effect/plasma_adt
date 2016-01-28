@@ -16,6 +16,10 @@ namespace generic_adt
 	template<class T>struct type_tag
 	{
 		typedef T type;
+		template<class... Ts>static T make_value(Ts&&... args)
+		{
+			return T{ std::forward<Ts>(args)... };
+		}
 	};
 	template<class T>constexpr type_tag<T> make_type_tag(T const&)
 	{
@@ -461,6 +465,15 @@ namespace generic_adt
 			value_variants<Generic> value;
 		};
 
+		template<std::size_t Id, class... Ts>struct no_generic_value
+		{
+			utility::id_type<Id, std::tuple<Ts...>> value;
+			template<class Generic>operator std::shared_ptr<value_type<Generic>>()const
+			{
+				return std::make_shared<value_type<Generic>>(value_type<Generic>{value});
+			}
+		};
+
 		template<class Generic, class Type>struct instance_t;
 		template<class Generic, std::size_t Id, class... Ts>struct instance_t<Generic, utility::id_type<Id, std::tuple<Ts...>>>
 		{
@@ -469,6 +482,14 @@ namespace generic_adt
 				return std::make_shared<value_type<Generic>>(value_type<Generic>{utility::make_id_type<Id>(std::make_tuple(args...))});
 			}
 		};
+		template<std::size_t Id, class... Ts>struct instance_t<void, utility::id_type<Id, std::tuple<Ts...>>>
+		{
+			no_generic_value<Id,Ts...> operator()(Ts const&... args)const
+			{
+				return no_generic_value<Id, Ts...>{utility::make_id_type<Id>(std::make_tuple(args...))};
+			}
+		};
+
 		template<class Type, class PatternTuple, class IndexTuple> struct pattern_t;
 		template<std::size_t Id, class... Ts, class... Patterns, std::size_t... Is>struct pattern_t
 			<utility::id_type<Id, std::tuple<Ts...>>, std::tuple<Patterns...>, std::index_sequence<Is...>>
