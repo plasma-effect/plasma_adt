@@ -10,9 +10,9 @@ struct list :generic_data_type<list, void, tuple<generic_tag, list>>{};
 const auto Nil = list::instance_function<0>();
 const auto Tree = list::instance_function<1>();
 
-const auto Sum = pattern_match::generic_recursion<generic_tag, list>()
-| Nil <= [](auto, auto t) {return t.make_value();}
-| Tree(0_, 1_) <= [](auto recur, auto, auto v, auto next) {return v + recur(next);};
+const auto Sum = pattern_match::generic_recursion<generic_tag, list, generic_tag>()
+| Nil <= [](auto, auto t, auto v) {return v;}
+| Tree(0_, 1_) <= [](auto recur, auto, auto v, auto next, auto u) {return v + recur(next, u);};
 
 const auto nil = Nil(type_tag<void>{})();
 
@@ -24,6 +24,6 @@ int main()
 	auto v = int_tree(1, int_tree(2, int_tree(3, nil)));
 	auto u = string_tree("this ", string_tree("is ", string_tree("test", nil)));
 
-	std::cout << Sum(v) << std::endl;
-	std::cout << Sum(u) << std::endl;
+	std::cout << Sum(v, 1) << std::endl;
+	std::cout << Sum(u, "hage") << std::endl;
 }

@@ -427,6 +427,10 @@ namespace generic_adt
 			{
 				return place_holder{};
 			}
+			template<class Func>std::pair<place_holder_t<I>,Func> operator<=(Func func)const
+			{
+				return std::make_pair(*this, func);
+			}
 		};
 		template<char... Cs>constexpr place_holder_t<detail::value_t<0, (Cs - '0')...>::value> operator"" _()
 		{
@@ -445,7 +449,12 @@ namespace generic_adt
 			{
 				return place_holder{};
 			}
+			template<class Func>std::pair<ignore_place_t, Func> operator<=(Func func)
+			{
+				return std::make_pair(*this, func);
+			}
 		};
+		constexpr ignore_place_t i_{};
 	}
 
 	template<class Derived, class... Variants>struct generic_data_type
