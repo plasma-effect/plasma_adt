@@ -276,14 +276,19 @@ namespace generic_adt
 				return lambda_t<Func, std::tuple<Args...>, std::make_index_sequence<sizeof...(Args)>>{func, std::make_tuple(args...)};
 			}
 
-			template<class T>struct forward_t
+			template<class T, class Base, class ValueType, class Generic>struct forward_t
 			{
-				typedef T const& type;
+				typedef typename utility::trans_return_type<T,Base,ValueType,Generic>::type const& type;
 			};
-			template<class T>struct forward_t<T&>
+			template<class T, class Base, class ValueType, class Generic>struct forward_t<T&, Base, ValueType, Generic>
 			{
-				typedef T& type;
+				typedef typename utility::trans_return_type<T, Base, ValueType, Generic>::type& type;
 			};
+			template<class T, class Base, class ValueType, class Generic>struct forward_t<T const&, Base, ValueType, Generic>
+			{
+				typedef typename utility::trans_return_type<T, Base, ValueType, Generic>::type const& type;
+			};
+
 		}
 
 		template<class Return, class DataType, class... Ts>struct generic_match_t
@@ -300,7 +305,7 @@ namespace generic_adt
 				Func func;
 
 				template<class Generic>boost::optional<return_type<Generic>> operator()
-					(value_type<Generic>const& value, typename detail::forward_t<Ts>::type... arg)const
+					(value_type<Generic>const& value, typename detail::forward_t<Ts,DataType,value_type<Generic>,Generic>::type... arg)const
 				{
 					if (auto ret = next(value, arg...))
 						return ret;
@@ -320,7 +325,7 @@ namespace generic_adt
 			struct first_match_t
 			{
 				template<class Generic>boost::optional<return_type<Generic>> operator()
-					(value_type<Generic>const&, typename detail::forward_t<Ts>::type...)const
+					(value_type<Generic>const&, typename detail::forward_t<Ts, DataType, value_type<Generic>, Generic>::type...)const
 				{
 					return boost::none;
 				}
@@ -345,7 +350,7 @@ namespace generic_adt
 				Func func;
 
 				template<class Recur, class Generic>boost::optional<return_type<Generic>> run
-					(Recur recur, value_type<Generic>const& value, typename detail::forward_t<Ts>::type... arg)const
+					(Recur recur, value_type<Generic>const& value, typename detail::forward_t<Ts, DataType, value_type<Generic>, Generic>::type... arg)const
 				{
 					if (auto ret = next.run(recur, value, arg...))
 						return ret;
@@ -356,7 +361,7 @@ namespace generic_adt
 				}
 
 				template<class Generic>return_type<Generic> operator()
-					(value_type<Generic>const& value, typename detail::forward_t<Ts>::type... arg)const
+					(value_type<Generic>const& value, typename detail::forward_t<Ts, DataType, value_type<Generic>, Generic>::type... arg)const
 				{
 					if (auto ret = run(std::cref(*this), value, arg...))return *ret;
 					throw std::invalid_argument(R"(pattern match error: not found this pattern)");
@@ -372,13 +377,13 @@ namespace generic_adt
 			struct first_match_t
 			{
 				template<class Recur, class Generic>boost::optional<return_type<Generic>> run
-					(Recur, value_type<Generic>const&, typename detail::forward_t<Ts>::type...)const
+					(Recur, value_type<Generic>const&, typename detail::forward_t<Ts, DataType, value_type<Generic>, Generic>::type...)const
 				{
 					return boost::none;
 				}
 
 				template<class Recur, class Generic>boost::optional<return_type<Generic>> operator()
-					(Recur, value_type<Generic>const&, typename detail::forward_t<Ts>::type...)const
+					(Recur, value_type<Generic>const&, typename detail::forward_t<Ts, DataType, value_type<Generic>, Generic>::type...)const
 				{
 					return boost::none;
 				}
