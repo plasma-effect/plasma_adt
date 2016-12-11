@@ -175,6 +175,14 @@ namespace plasma_adt
 					return data_type_base{ std::make_shared<inside_type>(id_type<ID,Type>{val}) };
 				}
 			};
+			template<std::size_t ID>struct instance_type<ID, tuple<>>
+			{
+				typedef detail::inside_tuple<> Inside;
+				auto operator()()const
+				{
+					return data_type_base{ std::make_shared<inside_type>(id_type<ID,detail::inside_tuple<>> {detail::inside_tuple<>()}) };
+				}
+			};
 			template<std::size_t ID, class T0>struct instance_type<ID, tuple<T0>>
 			{
 				typedef typename inside_type::template value_type<T0>::type Type0;
@@ -2335,4 +2343,6 @@ namespace plasma_adt
 
 		}
 	};
+
+	using void_t = tuple<>;
 }
