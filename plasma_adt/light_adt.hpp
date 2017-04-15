@@ -1,17 +1,11 @@
 #pragma once
 
-#ifndef _MSC_VER
-#include<boost/optional.hpp>
-#include<boost/variant.hpp>
-#define PLASMA_ADT_BOOST_OT_STD boost
-#define PLASMA_ADT_VARIANT_INDEX .which()
-#else
+//copyright (c) 2017 plasma-effect
+//Released under the MIT license
+//http://opensource.org/licenses/mit-license.php
+
 #include<variant>
 #include<optional>
-#define PLASMA_ADT_BOOST_OT_STD std
-#define PLASMA_ADT_VARIANT_INDEX .index()
-#endif
-
 #include<utility>
 #include<typeindex>
 #include<tuple>
@@ -69,7 +63,7 @@ namespace plasma_adt
 		};
 		template<class... Ts>class inside_variant
 		{
-			PLASMA_ADT_BOOST_OT_STD::variant<Ts...> value;
+			std::variant<Ts...> value;
 		public:
 			template<class T>inside_variant(T&& arg) :value(std::forward<T>(arg))
 			{
@@ -77,15 +71,15 @@ namespace plasma_adt
 			}
 			template<class T>auto& get()
 			{
-				return PLASMA_ADT_BOOST_OT_STD::get<T>(value);
+				return std::get<T>(value);
 			}
 			template<class T>auto const& get()const
 			{
-				return PLASMA_ADT_BOOST_OT_STD::get<T>(value);
+				return std::get<T>(value);
 			}
 			auto which()const
 			{
-				return value PLASMA_ADT_VARIANT_INDEX;
+				return value .index();
 			}
 		};
 
@@ -145,9 +139,9 @@ namespace plasma_adt
 					typedef decltype(value.template get<id_type<ID, typename instance_type<ID, T>::Inside>>().val) return_type;
 					if (value.which() == ID)
 					{
-						return PLASMA_ADT_BOOST_OT_STD::make_optional(std::cref(value.template get<id_type<ID, typename instance_type<ID, T>::Inside>>().val));
+						return std::make_optional(std::cref(value.template get<id_type<ID, typename instance_type<ID, T>::Inside>>().val));
 					}
-					return PLASMA_ADT_BOOST_OT_STD::optional<std::reference_wrapper<return_type const>>();
+					return std::optional<std::reference_wrapper<return_type const>>();
 				}
 			};
 			template<class T, class = void>struct argument_type

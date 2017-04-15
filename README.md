@@ -1,6 +1,6 @@
-#plasma.ADT
+# plasma.ADT
 全国で多分5人はいるC++でADT使いたいマン(含plasma)のために作ったADTもどき。
-#How To Use
+# How To Use
 通常版の方は[こっち](https://gist.github.com/plasma-effect/ffc1a66be05eceec1360)で解説してるのでgenericに使える方の解説をします。
 
 lispのリストと同じ型を作ることでplasma.ADT(generic版)の機能に一通り触ることができます(できるはずです多分)  
@@ -39,11 +39,11 @@ int main()
 	}
 }
 ```
-##準備すべきもの
+## 準備すべきもの
 - C++のコンパイラ
 - このリポジトリ(git fetchすると更新があったとき等に楽)
 git fetchしたこのリポジトリにパスを通せば使えます。
-###(一応)VS2015でのパスの通し方
+### (一応)VS2015でのパスの通し方
 プロジェクト→  
 (プロジェクト名)のプロパティ→  
 C/C++→  
@@ -51,7 +51,7 @@ C/C++→
 編集→  
 目的のフォルダを選択する
 
-##型を定義しよう
+## 型を定義しよう
 まずどのような型かどうかをgeneric_data_typeに教えてやらないといけません。上のコードではここに当たります。
 ```cpp
 struct list : generic_data_type<list, 
@@ -61,7 +61,7 @@ struct list : generic_data_type<list,
 generic_data_typeはtemplateクラスです。第1引数にその型の名前を、第2引数以降にその型の構造を代入します。  
 型の構造で渡された型のvariantになります。voidだと空クラス、複数の型のtupleならgeneric_adt::tupleを利用します。  
 自由に型を変更したいところにgeneric_adt::generic_tagを渡すとそこがgenericになります。
-##パターン構成変数を生成しよう
+## パターン構成変数を生成しよう
 generic_data_typeに渡した型のうち第2変数を第0クラス、以下第1クラス、第2クラス…と呼ぶことにします。  
 パターンマッチの構成等に使う変数を生成しないといけません。上のコードでは以下の部分です。
 ```cpp
@@ -90,7 +90,7 @@ pattern_match::generic_recursionフリー関数でパターンマッチのベー
 - 第1引数：何のgenericかを表す変数(typename decltype(t)::typeすることでgeneric_tagが何に置き換わっているかわかる)
 - 第2引数以降：パターンでoperator"" _が使われているところにあたる変数
 が渡されます。ラムダ式を使う場合autoを多様することになります。
-##変数生成用の関数オブジェクトを生成しよう
+## 変数生成用の関数オブジェクトを生成しよう
 上のNilとTreeはあくまでパターンであって、ADTのオブジェクトを生成するにはもうひと手間が必要となります。  
 パターンのoperator()にplasma_adt::type_tag(型が何かという情報だけが入ったクラスです)の変数を渡すことで
 generic_tagの部分がその型に置き換わったオブジェクトを生成できます。
@@ -98,12 +98,12 @@ generic_tagの部分がその型に置き換わったオブジェクトを生成
 const auto IntTree = Tree(type_tag<int>{});
 const auto IntNil = Nil(type_tag<int>{});
 ```
-##変数を生成しよう。
+## 変数を生成しよう。
 IntTree変数とIntNil変数を使って変数が作れるようになりました。早速使ってみましょう。
 ```cpp
 auto v = IntTree(1, IntTree(2, IntNil()));
 ```
-#以下上級者向けの話
+# 以下上級者向けの話
 - サンプルでは継承使ってるけどその型はplace_holderにしか使ってないので実はtypedefでもよい
 - 再帰なしバージョンのパターンマッチ関数も作れる。その場合第0引数にtype_tagが渡される
 - 変数の型はstd::shared_ptr<...>型
