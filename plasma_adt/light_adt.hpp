@@ -63,8 +63,8 @@ namespace plasma_adt
 		};
 		template<class... Ts>class inside_variant
 		{
-			std::variant<Ts...> value;
 		public:
+			std::variant<Ts...> value;
 			template<class T>inside_variant(T&& arg) :value(std::forward<T>(arg))
 			{
 
@@ -2337,6 +2337,12 @@ namespace plasma_adt
 
 		}
 	};
+
+	
+	template<class Callable, class DataType, class... Ts>decltype(auto) visit(Callable const& call, data_type<DataType, Ts...>const& val)
+	{
+		return std::visit([&](auto v) {return call(v.val); }, val.ptr->value.value);
+	}
 
 	using void_t = tuple<>;
 }

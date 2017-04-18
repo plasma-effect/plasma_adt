@@ -1,29 +1,40 @@
 #include<iostream>
 #include<string>
-#include<plasma_adt/generic_data_type.hpp>
+#include<plasma_adt/light_adt.hpp>
 
-using namespace generic_adt;
-using namespace place_holder;
+using namespace plasma_adt;
+struct data :data_type<data,
+	int,
+	tuple<int, data>>
+{
+	template<class T>data(T&& arg) :data_type(std::forward<T>(arg))
+	{
 
-struct list :generic_data_type<list, void, tuple<generic_tag, list>>{};
+	}
+};
+auto const atomic = data::get_instance<0>();
+auto const list = data::get_instance<1>();
+typedef decltype(std::declval<data>().get(atomic)->get()) atomic_t;
+typedef decltype(std::declval<data>().get(list)->get()) list_t;
 
-const auto Nil = list::instance_function<0>();
-const auto Tree = list::instance_function<1>();
+int sum(data const& v);
 
-const auto Sum = pattern_match::generic_recursion<generic_tag, list, generic_tag>()
-| Nil <= [](auto, auto t, auto v) {return v;}
-| Tree(0_, 1_) <= [](auto recur, auto, auto v, auto next, auto u) {return v + recur(next, u);};
+int sumi(atomic_t const& v)
+{
+	return v;
+}
 
-const auto nil = Nil(type_tag<void>{})();
+int sumi(list_t const& v)
+{
+	return v.get<0>() + sum(v.get<1>());
+}
+
+int sum(data const& v)
+{
+	return visit([](auto const& v) {return sumi(v); }, v);
+}
 
 int main()
 {
-	const auto int_tree = Tree(type_tag<int>{});
-	const auto string_tree = Tree(type_tag<std::string>{});
-
-	auto v = int_tree(1, int_tree(2, int_tree(3, nil)));
-	auto u = string_tree("this ", string_tree("is ", string_tree("test", nil)));
-
-	std::cout << Sum(v, 1) << std::endl;
-	std::cout << Sum(u, "hage") << std::endl;
+	std::cout << sum(list(1, list(2, atomic(3)))) << std::endl;
 }
