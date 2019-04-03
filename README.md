@@ -71,7 +71,7 @@ const auto Tree = list::instance_function<1>();
 第nクラスのパターンはinstance_function< n > staticメンバ関数で呼び出せます。  
 第0クラス(voidに当たる)をNil  
 第1クラス(tuple< generic_tag, list>に当たる)をTreeと名づけます。
-##パターンマッチする関数を作ろう
+## パターンマッチする関数を作ろう
 上でリストの構造に関する設定は完了です。次に関数を作る方法を解説します。  
 このリストをstd::listに変換する関数を作ります。上のコードでは次に当たります。
 ```cpp
